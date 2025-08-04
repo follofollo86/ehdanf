@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🦕 공룡 분류 게임</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(45deg, #FFB6C1 0%, #FFE4E1 25%, #E0FFFF 50%, #F0FFF0 75%, #FFF8DC 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 8s ease infinite;
+            min-height: 100vh;
+            padding: 20px;
+            user-select: none;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(255, 182, 193, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(173, 216, 230, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 60%, rgba(144, 238, 144, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 70% 30%, rgba(255, 218, 185, 0.3) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .game-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .title {
+            text-align: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Helvetica Neue", Arial, sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            color: #FF6B9D;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .score-board {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #4A90E2;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .categories {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .category {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 25px;
+            padding: 20px;
+            min-height: 200px;
+            width: 300px;
+            border: 4px dashed #DDD;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .category.carnivore {
+            border-color: #FF6B6B;
+            background: linear-gradient(135deg, #FFE5E5, #FFF0F0);
+        }
+
+        .category.herbivore {
+            border-color: #4ECDC4;
+            background: linear-gradient(135deg, #E5FFF8, #F0FFFC);
+        }
+
+        .category.omnivore {
+            border-color: #FFE66D;
+            background: linear-gradient(135deg, #FFF8E5, #FFFCF0);
+        }
+
+        .category.drag-over {
+            transform: scale(1.05);
+            border-style: solid;
+            box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+        }
+
+        .category-title {
+            font-size: 1.8rem;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .category-description {
+            text-align: center;
+            font-size: 1rem;
+            opacity: 0.8;
+            margin-bottom: 15px;
+        }
+
+        .carnivore .category-title {
+            color: #FF6B6B;
+        }
+
+        .herbivore .category-title {
+            color: #4ECDC4;
+        }
+
+        .omnivore .category-title {
+            color: #FFB347;
+        }
+
+        .animals-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .animal {
+            background: white;
+            border-radius: 50%;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            border: 3px solid #E0E0E0;
+            width: 120px;
+            height: 120px;
+            text-align: center;
+            touch-action: manipulation;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .animal:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .animal:active {
+            transform: scale(0.95);
+        }
+
+        .animal-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .animal.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+
+        .category .animal {
+            margin: 5px;
+            border-color: #90EE90;
+            background: #F0FFF0;
+        }
+
+        .buttons {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #FF6B9D, #4A90E2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .result {
+            text-align: center;
+            font-size: 2rem;
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 20px;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+            animation: bounceIn 0.6s ease;
+        }
+
+        .result.perfect {
+            background: linear-gradient(135deg, #90EE90, #98FB98);
+            color: #006400;
+        }
+
+        .result.good {
+            background: linear-gradient(135deg, #FFE66D, #FFF8DC);
+            color: #B8860B;
+        }
+
+        .result.try-again {
+            background: linear-gradient(135deg, #FFB6C1, #FFC0CB);
+            color: #DC143C;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .instructions {
+            text-align: center;
+            font-size: 1.3rem;
+            color: #666;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.8);
+            padding: 15px;
+            border-radius: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+            
+            .categories {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .category {
+                width: 90%;
+                max-width: 350px;
+            }
+            
+            .animal {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .animal-emoji {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="title">🐾 동물 분류 게임 🦁</h1>
+        
+        <div class="score-board">
+            <span id="score">점수: 0/10</span>
+        </div>
+
+        <div class="instructions">
+            🎯 동물들을 올바른 그룹으로 분류해보세요! 터치해서 드래그하거나 클릭하세요!<br>
+            💡 잘못 분류했다면 동물을 더블클릭해서 원래 자리로 돌려보세요!
+        </div>
+
+        <div class="categories">
+            <div class="category carnivore" data-type="carnivore">
+                <div class="category-title">🥩 육식동물</div>
+                <div class="category-description">고기를 먹는 동물들</div>
+            </div>
+            
+            <div class="category herbivore" data-type="herbivore">
+                <div class="category-title">🌿 초식동물</div>
+                <div class="category-description">풀을 먹는 동물들</div>
+            </div>
+            
+            <div class="category omnivore" data-type="omnivore">
+                <div class="category-title">🍎 잡식동물</div>
+                <div class="category-description">고기와 풀을 모두 먹는 동물들</div>
+            </div>
+        </div>
+
+        <div class="animals-container" id="animals">
+            <!-- 동물들이 여기에 동적으로 추가됩니다 -->
+        </div>
+
+        <div class="buttons">
+            <button class="btn" onclick="checkAnswers()">🎯 채점하기</button>
+            <button class="btn" onclick="resetGame()">🔄 다시하기</button>
+        </div>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        const animals = [
+            { name: '사자', emoji: '🦁', type: 'carnivore', description: '백수의 왕, 고기만 먹어요' },
+            { name: '토끼', emoji: '🐰', type: 'herbivore', description: '당근과 풀을 좋아해요' },
+            { name: '곰', emoji: '🐻', type: 'omnivore', description: '꿀, 생선, 열매를 모두 먹어요' },
+            { name: '기린', emoji: '🦒', type: 'herbivore', description: '높은 나무 잎을 먹어요' },
+            { name: '늑대', emoji: '🐺', type: 'carnivore', description: '무리지어 사냥하는 육식동물' },
+            { name: '코끼리', emoji: '🐘', type: 'herbivore', description: '풀과 나무껍질을 먹어요' },
+            { name: '돼지', emoji: '🐷', type: 'omnivore', description: '뭐든지 잘 먹는 잡식동물' },
+            { name: '호랑이', emoji: '🐅', type: 'carnivore', description: '줄무늬가 멋진 육식동물' },
+            { name: '판다', emoji: '🐼', type: 'herbivore', description: '대나무만 먹는 귀여운 곰' },
+            { name: '원숭이', emoji: '🐵', type: 'omnivore', description: '과일과 곤충을 모두 먹어요' }
+        ];
+
+        let currentScore = 0;
+        let selectedAnimal = null;
+
+        function initGame() {
+            const container = document.getElementById('animals');
+            container.innerHTML = '';
+            
+            animals.forEach((animal, index) => {
+                const animalElement = document.createElement('div');
+                animalElement.className = 'animal';
+                animalElement.draggable = true;
+                animalElement.dataset.type = animal.type;
+                animalElement.dataset.index = index;
+                
+                animalElement.innerHTML = `
+                    <span class="animal-emoji" style="font-size: 3rem; display: block; margin-bottom: 8px;">${animal.emoji}</span>
+                    <div class="animal-name" style="font-size: 0.9rem; font-weight: 500;">${animal.name}</div>
+                `;
+
+                // 터치 및 클릭 이벤트
+                animalElement.addEventListener('click', () => selectAnimal(animalElement));
+                animalElement.addEventListener('dblclick', () => returnToOriginal(animalElement));
+                animalElement.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    selectAnimal(animalElement);
+                });
+
+                // 드래그 이벤트
+                animalElement.addEventListener('dragstart', (e) => {
+                    selectedAnimal = animalElement;
+                    animalElement.classList.add('dragging');
+                });
+
+                animalElement.addEventListener('dragend', () => {
+                    animalElement.classList.remove('dragging');
+                });
+
+                container.appendChild(animalElement);
+            });
+
+            // 카테고리에 드롭 이벤트 추가
+            document.querySelectorAll('.category').forEach(category => {
+                category.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    category.classList.add('drag-over');
+                });
+
+                category.addEventListener('dragleave', () => {
+                    category.classList.remove('drag-over');
+                });
+
+                category.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    category.classList.remove('drag-over');
+                    if (selectedAnimal) {
+                        category.appendChild(selectedAnimal);
+                        selectedAnimal = null;
+                    }
+                });
+
+                // 터치로 선택된 동물을 카테고리에 추가
+                category.addEventListener('click', () => {
+                    if (selectedAnimal && !category.contains(selectedAnimal)) {
+                        category.appendChild(selectedAnimal);
+                        selectedAnimal.classList.remove('selected');
+                        selectedAnimal = null;
+                    }
+                });
+            });
+
+            updateScore();
+        }
+
+        function selectAnimal(animalElement) {
+            // 이전 선택 해제
+            if (selectedAnimal) {
+                selectedAnimal.classList.remove('selected');
+            }
+
+            // 새로운 선택
+            selectedAnimal = animalElement;
+            animalElement.classList.add('selected');
+            animalElement.style.border = '4px solid #FF6B9D';
+        }
+
+        function returnToOriginal(animalElement) {
+            // 더블클릭으로 원래 자리로 돌아가기
+            const animalsContainer = document.getElementById('animals');
+            animalElement.style.border = '3px solid #E0E0E0';
+            animalElement.classList.remove('selected');
+            animalsContainer.appendChild(animalElement);
+            
+            if (selectedAnimal === animalElement) {
+                selectedAnimal = null;
+            }
+            
+            updateScore();
+        }
+
+        function updateScore() {
+            const placedAnimals = document.querySelectorAll('.category .animal');
+            document.getElementById('score').textContent = `배치된 동물: ${placedAnimals.length}/10`;
+        }
+
+        function checkAnswers() {
+            let correct = 0;
+            const categories = document.querySelectorAll('.category');
+            
+            categories.forEach(category => {
+                const categoryType = category.dataset.type;
+                const animalsInCategory = category.querySelectorAll('.animal');
+                
+                animalsInCategory.forEach(animal => {
+                    if (animal.dataset.type === categoryType) {
+                        correct++;
+                        animal.style.border = '4px solid #4CAF50';
+                    } else {
+                        animal.style.border = '4px solid #F44336';
+                    }
+                });
+            });
+
+            showResult(correct);
+        }
+
+        function showResult(correct) {
+            const resultDiv = document.getElementById('result');
+            let message, className;
+
+            if (correct === 10) {
+                message = '🎉 완벽해요! 모든 동물을 올바르게 분류했어요! 🌟';
+                className = 'perfect';
+            } else if (correct >= 7) {
+                message = `😊 잘했어요! ${correct}개를 맞췄어요! 조금만 더 노력해봐요! 💪`;
+                className = 'good';
+            } else {
+                message = `🤗 ${correct}개를 맞췄어요! 다시 한번 도전해보세요! 화이팅! 🐾`;
+                className = 'try-again';
+            }
+
+            resultDiv.textContent = message;
+            resultDiv.className = `result show ${className}`;
+        }
+
+        function resetGame() {
+            // 결과 숨기기
+            document.getElementById('result').classList.remove('show');
+            
+            // 모든 동물을 원래 컨테이너로 이동
+            const animalsContainer = document.getElementById('animals');
+            document.querySelectorAll('.animal').forEach(animal => {
+                animal.style.border = '3px solid #E0E0E0';
+                animal.classList.remove('selected');
+                animalsContainer.appendChild(animal);
+            });
+
+            selectedAnimal = null;
+            updateScore();
+        }
+
+        // 게임 시작
+        initGame();
+
+        // 터치 디바이스를 위한 추가 스타일
+        const style = document.createElement('style');
+        style.textContent = `
+            .animal.selected {
+                border: 4px solid #FF6B9D !important;
+                transform: scale(1.1);
+                box-shadow: 0 8px 16px rgba(255, 107, 157, 0.4);
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'969c0806309dea24',t:'MTc1NDI4OTI5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
